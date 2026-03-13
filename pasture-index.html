@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Pasture — Under Construction</title>
+<meta name="description" content="the-pasture.org is being built. Check back soon.">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#87CEEB;--ground:#4CAF50;--dirt:#8B6914;--barn:#DD4444;--roof:#AA2222;
+    --door:#882222;--title:#222;--sub:#555;--fence:#C4A44A;--silo:#AAA;
+    --silo-top:#888;--window:#FFD700;--cloud:#fff;--text-bg:rgba(255,255,255,0.75);
+    --chicken:#fff;--comb:#cc3333;--beak:#FF6600;--leg:#FF6600;
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --bg:#1a1a2e;--ground:#2d5a1e;--dirt:#4a3520;--barn:#cc3333;--roof:#881818;
+    --door:#662222;--title:#ffcc00;--sub:#88bb55;--fence:#aa9966;--silo:#888;
+    --silo-top:#666;--window:#ffee88;--cloud:transparent;--text-bg:rgba(0,0,0,0.5);
+    --chicken:#eee;--comb:#cc3333;--beak:#FF6600;--leg:#FF6600;
+  }}
+  html,body{height:100%;overflow:hidden}
+  body{background:var(--bg);font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;image-rendering:pixelated}
+  canvas{position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated}
+  .overlay{position:relative;z-index:10;text-align:center;padding:24px;background:var(--text-bg);border:3px solid var(--fence);max-width:460px;margin:0 16px}
+  .overlay h1{font-size:clamp(20px,5vw,32px);color:var(--title);letter-spacing:3px;margin-bottom:8px;text-transform:uppercase}
+  .overlay .dash{width:60%;height:3px;background:var(--fence);margin:0 auto 14px}
+  .overlay p{font-size:clamp(11px,2.5vw,14px);color:var(--sub);line-height:1.7;letter-spacing:1px}
+  .blink{animation:blink 1s step-end infinite}
+  @keyframes blink{0%,80%{opacity:1}85%,95%{opacity:0}100%{opacity:1}}
+  .pixel-icon{display:inline-block;margin:16px 0 8px}
+  .footer{margin-top:18px;font-size:10px;color:var(--sub);opacity:.6;letter-spacing:1px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="overlay">
+  <div class="pixel-icon">
+    <svg width="48" height="48" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">
+      <rect x="3" y="7" width="10" height="7" fill="var(--barn)"/>
+      <rect x="2" y="6" width="12" height="1" fill="var(--roof)"/>
+      <rect x="3" y="5" width="10" height="1" fill="var(--roof)"/>
+      <rect x="4" y="4" width="8" height="1" fill="var(--roof)"/>
+      <rect x="5" y="3" width="6" height="1" fill="var(--roof)"/>
+      <rect x="6" y="2" width="4" height="1" fill="var(--roof)"/>
+      <rect x="7" y="1" width="2" height="1" fill="var(--roof)"/>
+      <rect x="6" y="10" width="4" height="4" fill="var(--door)"/>
+      <rect x="4" y="8" width="2" height="2" fill="var(--window)"/>
+      <rect x="10" y="8" width="2" height="2" fill="var(--window)"/>
+    </svg>
+  </div>
+  <h1>The Pasture</h1>
+  <div class="dash"></div>
+  <p>&gt; STATUS: UNDER CONSTRUCTION<span class="blink">_</span></p>
+  <p>&gt; PLANTING SEEDS...</p>
+  <p>&gt; COME BACK LATER FOR THE HARVEST</p>
+  <div class="footer">EST. 2026 &bull; MATT'S PLOT OF INTERNET LAND</div>
+</div>
+<script>
+const $ = document.getElementById('c'), ctx = $.getContext('2d');
+const P = 8;
+let W, H, cols, rows;
+const dark = matchMedia('(prefers-color-scheme:dark)').matches;
+
+function resize() {
+  W = $.width = innerWidth; H = $.height = innerHeight;
+  cols = Math.ceil(W / P); rows = Math.ceil(H / P);
+}
+resize();
+addEventListener('resize', resize);
+
+const groundY = () => Math.floor(rows * 0.68);
+const dirtY = () => groundY() - 1;
+
+// barn
+const barn = { w: 20, h: 13 };
+barn.x = () => Math.floor(cols * 0.18) - Math.floor(barn.w / 2);
+barn.y = () => groundY() - barn.h;
+
+// silo
+const silo = { w: 5, h: 16 };
+silo.x = () => barn.x() + barn.w + 3;
+silo.y = () => groundY() - silo.h;
+
+// fence
+function drawFence(ctx, startCol, count) {
+  const gy = groundY();
+  const c = dark ? '#aa9966' : '#C4A44A';
+  ctx.fillStyle = c;
+  for (let i = 0; i < count; i++) {
+    const fx = startCol + i * 5;
+    // post
+    fillPx(fx, gy - 4, 1, 4);
+    // rails
+    if (i < count - 1) { fillPx(fx, gy - 3, 5, 1); fillPx(fx, gy - 1, 5, 1); }
+  }
+}
+
+function fillPx(x, y, w, h) { ctx.fillRect(x * P, y * P, w * P, h * P); }
+
+// clouds
+const clouds = [];
+for (let i = 0; i < 4; i++) clouds.push({ x: Math.random() * 1.2, y: 0.08 + Math.random() * 0.2, w: 6 + Math.floor(Math.random() * 6) });
+
+// stars (dark mode)
+const stars = [];
+if (dark) for (let i = 0; i < 30; i++) stars.push({ x: Math.random(), y: Math.random() * 0.6, b: Math.random() });
+
+// chickens
+const chickens = [
+  { x: 0.7, dir: 1, frame: 0, timer: 0, peckTimer: 0, pecking: false },
+  { x: 0.82, dir: -1, frame: 0, timer: 0, peckTimer: 0, pecking: false },
+];
+
+let t = 0;
+function draw() {
+  t++;
+  ctx.clearRect(0, 0, W, H);
+  const gy = groundY(), dy = dirtY();
+
+  // sky
+  ctx.fillStyle = dark ? '#1a1a2e' : '#87CEEB';
+  ctx.fillRect(0, 0, W, gy * P);
+
+  // stars
+  if (dark) {
+    stars.forEach(s => {
+      const flicker = Math.sin(t * 0.03 + s.b * 20) > 0.3;
+      if (flicker) { ctx.fillStyle = '#ffee88'; fillPx(Math.floor(s.x * cols), Math.floor(s.y * rows), 1, 1); }
+    });
+  }
+
+  // clouds
+  if (!dark) {
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    clouds.forEach(cl => {
+      const cx = ((cl.x + t * 0.0003) % 1.3) - 0.1;
+      const px = Math.floor(cx * cols), py = Math.floor(cl.y * rows);
+      fillPx(px, py, cl.w, 2); fillPx(px + 1, py - 1, cl.w - 2, 1); fillPx(px + 1, py + 2, cl.w - 2, 1);
+    });
+  }
+
+  // ground
+  ctx.fillStyle = dark ? '#4a3520' : '#8B6914';
+  fillPx(0, dy, cols, 1);
+  ctx.fillStyle = dark ? '#2d5a1e' : '#4CAF50';
+  ctx.fillRect(0, gy * P, W, H - gy * P);
+
+  // grass tufts
+  ctx.fillStyle = dark ? '#3a7a22' : '#66BB6A';
+  for (let i = 0; i < cols; i += 3) { if ((i * 7 + 13) % 5 < 2) fillPx(i, gy, 1, 1); }
+
+  // barn
+  const bx = barn.x(), by = barn.y();
+  ctx.fillStyle = dark ? '#cc3333' : '#DD4444';
+  fillPx(bx, by + 4, barn.w, barn.h - 4);
+  // roof
+  ctx.fillStyle = dark ? '#881818' : '#AA2222';
+  for (let r = 0; r < 5; r++) fillPx(bx + r, by + 4 - r, barn.w - r * 2, 1);
+  // door
+  ctx.fillStyle = dark ? '#662222' : '#882222';
+  fillPx(bx + 8, by + barn.h - 6, 4, 6);
+  // windows
+  ctx.fillStyle = dark ? '#ffee88' : '#FFD700';
+  fillPx(bx + 3, by + 6, 2, 2);
+  fillPx(bx + 15, by + 6, 2, 2);
+
+  // silo
+  const sx = silo.x(), sy = silo.y();
+  ctx.fillStyle = dark ? '#888' : '#AAA';
+  fillPx(sx, sy + 2, silo.w, silo.h - 2);
+  ctx.fillStyle = dark ? '#666' : '#888';
+  fillPx(sx - 1, sy + 1, silo.w + 2, 2);
+  fillPx(sx, sy, silo.w, 1);
+
+  // fences
+  drawFence(ctx, Math.floor(cols * 0.55), 6);
+  drawFence(ctx, Math.floor(cols * 0.04), 4);
+
+  // chickens
+  chickens.forEach(ch => {
+    ch.timer++;
+    const cx = Math.floor(ch.x * cols), cy = gy - 2;
+
+    // random direction change
+    if (ch.timer % 120 === 0 && Math.random() > 0.5) ch.dir *= -1;
+    // random pecking
+    if (!ch.pecking && ch.timer % 90 === 0 && Math.random() > 0.6) { ch.pecking = true; ch.peckTimer = 0; }
+    if (ch.pecking) { ch.peckTimer++; if (ch.peckTimer > 30) ch.pecking = false; }
+
+    // walk
+    if (!ch.pecking && ch.timer % 8 === 0) {
+      ch.x += ch.dir * (1 / cols);
+      if (ch.x > 0.92) { ch.x = 0.92; ch.dir = -1; }
+      if (ch.x < 0.5) { ch.x = 0.5; ch.dir = 1; }
+      ch.frame = (ch.frame + 1) % 2;
+    }
+
+    // draw chicken body
+    ctx.fillStyle = dark ? '#eee' : '#fff';
+    fillPx(cx, cy, 2, 1);
+    fillPx(cx, cy + 1, 2, 1);
+    // head
+    if (ch.pecking && ch.peckTimer % 10 < 5) {
+      fillPx(cx + (ch.dir > 0 ? 2 : -1), cy + 1, 1, 1);
+      ctx.fillStyle = dark ? '#FF6600' : '#FF6600';
+      fillPx(cx + (ch.dir > 0 ? 3 : -2), cy + 1, 1, 1);
+    } else {
+      fillPx(cx + (ch.dir > 0 ? 2 : -1), cy - 1, 1, 1);
+      fillPx(cx + (ch.dir > 0 ? 2 : -1), cy, 1, 1);
+      ctx.fillStyle = '#cc3333';
+      fillPx(cx + (ch.dir > 0 ? 2 : -1), cy - 1, 1, 1);
+      ctx.fillStyle = '#FF6600';
+      fillPx(cx + (ch.dir > 0 ? 3 : -2), cy, 1, 1);
+    }
+    // legs
+    ctx.fillStyle = '#FF6600';
+    if (ch.frame === 0) { fillPx(cx, cy + 2, 1, 1); fillPx(cx + 1, cy + 2, 1, 1); }
+    else { fillPx(cx - (ch.dir > 0 ? 0 : -1), cy + 2, 1, 1); fillPx(cx + 1 + (ch.dir > 0 ? 1 : 0), cy + 2, 1, 1); }
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
